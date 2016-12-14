@@ -26,12 +26,18 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.tools.nsc.Properties._
 
 /**
  * HBaseSQLCliDriver
  *
  */
 object HBaseSQLCliDriver extends Logging {
+  final val VERSION = "version 2.0.2"
+  final val versionString = "version " + scalaPropOrElse("version.number", "(unknown)")
+  final val javaVmName = propOrEmpty("java.vm.name")
+  final val javaVersion = propOrEmpty("java.version")
+
   final val ANSI_RESET = "\u001B[0m"
   final val ANSI_BLACK = "\u001B[30m"
   final val ANSI_RED = "\u001B[31m"
@@ -107,6 +113,20 @@ object HBaseSQLCliDriver extends Logging {
           System.err.println(e.getMessage)
       }
 
+      out.println("Welcome to")
+      out.println()
+      out.println("         __")
+      out.println("    )__/(    _ _ /")
+      out.println("   /  /__)/)(// /(   " + VERSION)
+      out.println("         /")
+      out.println()
+
+      val welcomeMsg = "Using Scala %s (%s, Java %s)".format(versionString, javaVmName, javaVersion)
+      out.println(welcomeMsg)
+      out.println("Type in command to have them executed.")
+      out.println("Type `help` for more information, `quit` to terminate the shell.")
+      out.println()
+
       var break = false
       while (!break) {
         val line = reader.readLine
@@ -141,21 +161,41 @@ object HBaseSQLCliDriver extends Logging {
     token(0).toUpperCase match {
       case COLOR =>
         token(1).toUpperCase match {
-          case "RESET" => currentColor = ANSI_RESET
-          case "BLACK" => currentColor = ANSI_BLACK
-          case "RED" => currentColor = ANSI_RED
-          case "GREEN" => currentColor = ANSI_GREEN
-          case "YELLOW" => currentColor = ANSI_YELLOW
-          case "BLUE" => currentColor = ANSI_BLUE
-          case "PURPLE" => currentColor = ANSI_PURPLE
-          case "CYAN" => currentColor = ANSI_CYAN
-          case "WHITE" => currentColor = ANSI_WHITE
-          case _ => currentColor = ANSI_RESET
+          case "RESET" =>
+            currentColor = ANSI_RESET
+            printout(out, "Color is now set to DEFAULT.")
+          case "BLACK" =>
+            currentColor = ANSI_BLACK
+            printout(out, "Color is now set to BLACK.")
+          case "RED" =>
+            currentColor = ANSI_RED
+            printout(out, "Color is now set to RED.")
+          case "GREEN" =>
+            currentColor = ANSI_GREEN
+            printout(out, "Color is now set to GREEN.")
+          case "YELLOW" =>
+            currentColor = ANSI_YELLOW
+            printout(out, "Color is now set to YELLOW.")
+          case "BLUE" =>
+            currentColor = ANSI_BLUE
+            printout(out, "Color is now set to BLUE.")
+          case "PURPLE" =>
+            currentColor = ANSI_PURPLE
+            printout(out, "Color is now set to PURPLE.")
+          case "CYAN" =>
+            currentColor = ANSI_CYAN
+            printout(out, "Color is now set to CYAN.")
+          case "WHITE" =>
+            currentColor = ANSI_WHITE
+            printout(out, "Color is now set to WHITE.")
+          case _ =>
+            currentColor = ANSI_RESET
+            printout(out, "Color is now set to DEFAULT.")
         }
         false
       case QUIT => true
       case EXIT => true
-      case HELP => printHelp(token); false
+      case HELP => printHelp(out, token); false
       case _ =>
         try {
           logInfo(s"Processing $line")
@@ -165,10 +205,9 @@ object HBaseSQLCliDriver extends Logging {
             if (token(0) == "EXPLAIN") false else true
           )
           val end = System.currentTimeMillis()
-          out.println("OK")
-          if (!str.equals("++\n||\n++\n++\n")) out.println(s"$currentColor$str$ANSI_RESET")
+          if (!str.equals("++\n||\n++\n++\n")) printout(out, str)
           val timeTaken: Double = (end - start) / 1000.0
-          out.println(s"Time taken: $timeTaken seconds")
+          printout(out, s"Time taken: $timeTaken seconds")
           out.flush()
           false
         } catch {
@@ -179,26 +218,33 @@ object HBaseSQLCliDriver extends Logging {
     }
   }
 
-  private def printHelp(token: Array[String]) = {
+  private def printout(out: PrintWriter, str: String): Unit = {
+    out.println(s"$currentColor$str$ANSI_RESET")
+  }
+
+  private def printHelp(out: PrintWriter, token: Array[String]) = {
+    out.print(s"$currentColor")
     if (token.length > 1) {
       token(1).toUpperCase match {
+        case "COLOR" =>
+          out.println("COLOR <BLACK | RED | YELLOW | GREEN | CYAN | BLUE | PURPLE | WHITE | RESET>")
         case "CREATE" =>
-          println( """CREATE TABLE table_name (col_name data_type, ... , col_name, data_type) TBLPROPERTIES(
+          out.println( """CREATE TABLE table_name (col_name data_type, ... , col_name, data_type) TBLPROPERTIES(
                       |'hbaseTableName'='hbase_table_name',
                       |'keyCols'='col_name;...;col_name',
                       |'nonKeyCols'='col_name,column_family,qualifier;...;col_name,column_family,qualifier')"""
             .stripMargin)
         case "DROP" =>
-          println("DROP DATABASE db_name")
-          println("DROP TABLE table_name")
+          out.println("DROP DATABASE db_name")
+          out.println("DROP TABLE table_name")
         case "ALTER" =>
-          println("Unsupported yet - ")
-          println("ALTER TABLE table_name ADD (col_name data_type, ...) MAPPED BY (expression)")
-          println("ALTER TABLE table_name DROP col_name")
+          out.println("Unsupported yet - ")
+          out.println("ALTER TABLE table_name ADD (col_name data_type, ...) MAPPED BY (expression)")
+          out.println("ALTER TABLE table_name DROP col_name")
         case "LOAD" =>
-          println( """LOAD DATA INPATH file_path INTO TABLE table_name""".stripMargin)
+          out.println( """LOAD DATA INPATH file_path INTO TABLE table_name""".stripMargin)
         case "SELECT" =>
-          println( """SELECT [ALL | DISTINCT] select_expr, select_expr, ...
+          out.println( """SELECT [ALL | DISTINCT] select_expr, select_expr, ...
                      |FROM table_reference
                      |[WHERE where_condition]
                      |[GROUP BY col_list]
@@ -207,26 +253,28 @@ object HBaseSQLCliDriver extends Logging {
                      |]
                      |[LIMIT number]""")
         case "INSERT" =>
-          println("INSERT INTO TABLE table_name SELECT clause")
-          println("INSERT INTO TABLE table_name VALUES (value, ...)")
+          out.println("INSERT INTO TABLE table_name SELECT clause")
+          out.println("INSERT INTO TABLE table_name VALUES (value, ...)")
         case "DESCRIBE" =>
-          println("DESCRIBE table_name")
-          println("DESCRIBE DATABASE [EXTENDED] db_name")
+          out.println("DESCRIBE table_name")
+          out.println("DESCRIBE DATABASE [EXTENDED] db_name")
         case "SHOW" =>
-          println("SHOW TABLES [(IN|FROM) database_name] [[LIKE] 'pattern']")
-          println("SHOW (DATABASES|SCHEMAS) [LIKE 'pattern']")
+          out.println("SHOW TABLES [(IN|FROM) database_name] [[LIKE] 'pattern']")
+          out.println("SHOW (DATABASES|SCHEMAS) [LIKE 'pattern']")
         case _ =>
-          printHelpUsage()
+          printHelpUsage(out)
       }
+
     } else {
-      printHelpUsage()
+      printHelpUsage(out)
     }
+    out.print(s"$ANSI_RESET")
   }
  
-  private def printHelpUsage() = {
-    println("""Usage: HELP Statement    
+  private def printHelpUsage(out: PrintWriter) = {
+    out.println("""Usage: HELP Statement
       Statement:
-        CREATE | DROP | ALTER | LOAD | SELECT | INSERT | DESCRIBE | SHOW""")    
+        CREATE | DROP | ALTER | LOAD | SELECT | INSERT | DESCRIBE | SHOW | COLOR""")
   }
 }
 
