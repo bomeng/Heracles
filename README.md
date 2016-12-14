@@ -10,7 +10,7 @@ We believe, as a unified big data processing engine, Spark is in good position t
 
 ## Online Documentation
 
-Online documentation https://github.com/yzhou2001/HSpark/tree/spark_2.0/doc/SparkSQLOnHBase_v2.2.docx
+Online documentation is in the doc folder.
 
 ## Requirements
 
@@ -20,7 +20,7 @@ This version of 2.0.2 requires Spark 2.0.2.
 
 Spark HBase is built using [Apache Maven](http://maven.apache.org/).
 
-I. Clone and build Huawei-Spark/Spark-SQL-on-HBase
+I. Clone the HSpark project from GitHub
 ```
 $ git clone https://github.com/yzhou2001/HSpark.git
 ```
@@ -51,7 +51,19 @@ Currently, HBase coprocessor is not supported in this release.
 
 ## Interactive Scala Shell
 
-The easiest way to start using Spark HBase is through the Scala shell:
+The shell will connect to a local HBase master. You need to configure the HBase's hbase-env.sh file under "conf" folder by adding hspark.jar to its classpath.
+
+```
+export HBASE_CLASSPATH=<path_to_hspark>/hspark-2.0.2.jar
+```
+
+You may need to set the JAVA_HOME in the hbase-env.sh as well. Follow the instruction of configuring HBase to its proper settings (e.g. hbase-site.xml etc), after that, you can start HBase by following command:
+
+```
+start-hbase.sh
+```
+
+Then, the easiest way to start using Spark HBase is through the Scala shell:
 ```
 ./bin/hbase-sql
 ```
@@ -67,10 +79,10 @@ Then go to the spark-hbase installation directory and issue
 ./bin/pyspark-hbase
 ```
 A successful message is as follows:
-
+```
    You are using HSpark !!!
    HBaseSQLContext available as hsqlContext.
-
+```
 To run a python script, the PYTHONPATH environment should be set to the "python" directory of the Spark-HBase installation. For example,
 ```
 export PYTHONPATH=/root-of-HSpark/python
