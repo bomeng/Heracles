@@ -28,6 +28,8 @@ object TestHbase extends HBaseSparkSession(
   @transient val testUtil: HBaseTestingUtility =
     new HBaseTestingUtility(sparkContext.hadoopConfiguration)
 
+  testUtil.getConfiguration.set("hbase.fs.tmp.dir", System.getProperty("java.io.tmpdir"))
+
   testUtil.startMiniZKCluster
   logDebug(s"Spin up hbase minicluster with 1 master, 1 RS, 1 dataNode")
 
