@@ -517,9 +517,13 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     @transient val conf = job.getConfiguration
 
     @transient val hadoopReader = {
-      val fs = FileSystem.getLocal(conf)
-      val pathString = fs.pathToFile(new Path(loadPath)).toURI.toURL.toString
-      new HadoopReader(sqlContext.sparkContext, pathString)(relation)
+      if (loadPath.toLowerCase().startsWith("hdfs")) {
+        new HadoopReader(sqlContext.sparkContext, loadPath)(relation)
+      } else {
+        val fs = FileSystem.getLocal(conf)
+        val pathString = fs.pathToFile(new Path(loadPath)).toURI.toURL.toString
+        new HadoopReader(sqlContext.sparkContext, pathString)(relation)
+      }
     }
 
     @transient val splitKeys = relation.getRegionStartKeys.toArray

@@ -17,7 +17,8 @@
 
 package org.apache.spark.sql.hbase
 
-import java.io.{File, PrintWriter}
+import java.io.{File, FileInputStream, FileOutputStream, PrintWriter}
+import java.util.Properties
 
 import jline.console.ConsoleReader
 import jline.console.completer.{ArgumentCompleter, Completer, FileNameCompleter, StringsCompleter}
@@ -51,9 +52,8 @@ object HBaseSQLCliDriver extends Logging {
   private var currentColor = ANSI_RESET
 
   private val prompt = "hspark> "
-  private val conf = new SparkConf(true).set("spark.hadoop.hbase.zookeeper.quorum", "localhost")
-  private val sc = new SparkContext("local[2]", "hspark", conf)
-  private val hbaseCtx = new HBaseSparkSession(sc)
+
+  private var hbaseCtx: HBaseSparkSession = _
 
   private val QUIT = "QUIT"
   private val EXIT = "EXIT"
@@ -88,7 +88,32 @@ object HBaseSQLCliDriver extends Logging {
   }
 
   def main(args: Array[String]) {
+    import scala.collection.JavaConverters._
+
     try {
+      val home = System.getenv("HSPARK_HOME")
+      if (home.isEmpty) {
+        System.err.println("$HSPARK_HOME is not properly set")
+        System.exit(0)
+      }
+
+      val propFile = {
+        if (home.endsWith(File.separator))
+          home + "conf" + File.separator + "hspark.properties"
+        else
+          home + File.separator + "conf" + File.separator + "hspark.properties"
+      }
+
+      val conf = new SparkConf(true)
+
+      val props = new Properties()
+      props.load(new FileInputStream(propFile))
+      props.asScala.toMap.foreach {
+        case (key, value) => conf.set(key, value)
+      }
+      val sc = new SparkContext(props.getProperty("master"), props.getProperty("appName"), conf)
+      hbaseCtx = new HBaseSparkSession(sc)
+
       val reader = new ConsoleReader()
       reader.setPrompt(prompt)
 
