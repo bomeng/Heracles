@@ -63,7 +63,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
     var finished: Boolean = false
     var gotNext: Boolean = false
     val results: java.util.ArrayList[Cell] = new java.util.ArrayList[Cell]()
-    val row = new GenericMutableRow(finalOutput.size)
+    val row = new GenericInternalRow(finalOutput.size)
 
     val iterator = new Iterator[InternalRow] {
       override def hasNext: Boolean = {

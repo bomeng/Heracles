@@ -34,7 +34,7 @@ import scala.tools.nsc.Properties._
  *
  */
 object HBaseSQLCliDriver extends Logging {
-  final val VERSION = "version 2.0.2"
+  final val VERSION = "version 2.1.0"
   final val versionString = "version " + scalaPropOrElse("version.number", "(unknown)")
   final val javaVmName = propOrEmpty("java.vm.name")
   final val javaVersion = propOrEmpty("java.version")
@@ -227,7 +227,7 @@ object HBaseSQLCliDriver extends Logging {
           val start = System.currentTimeMillis()
           val df = hbaseCtx.sql(line)
           val str = df.showString(df.count.toInt, truncate =
-            if (token(0).toUpperCase == "EXPLAIN") false else true
+            if (token(0).toUpperCase == "EXPLAIN") 0 else 20
           )
           val end = System.currentTimeMillis()
           if (!str.equals("++\n||\n++\n++\n")) printout(out, str)

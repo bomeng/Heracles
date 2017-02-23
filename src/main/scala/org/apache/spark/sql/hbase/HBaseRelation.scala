@@ -48,7 +48,7 @@ class HBaseSource extends RelationProvider {
     val catalog = sqlContext.sparkSession.catalog.asInstanceOf[HBaseCatalog]
 
     val catalogTable = CatalogTable(null, null, null, null, properties = parameters)
-    catalog.createTable("", catalogTable, ignoreIfExists = true)
+    catalog.createTable(catalogTable, ignoreIfExists = true)
 
     val tableName = parameters("tableName")
     val hbaseNamespace = parameters("namespace")
@@ -927,7 +927,7 @@ private[hbase] case class HBaseRelation(
    * @param projection the pair of projection and its index
    * @param row the row to set values on
    */
-  private def setColumn(kv: Cell, projection: (Attribute, Int), row: MutableRow,
+  private def setColumn(kv: Cell, projection: (Attribute, Int), row: InternalRow,
                         bytesUtils: BytesUtils = BinaryBytesUtils): Unit = {
     if (kv == null || kv.getValueLength == 0) {
       row.setNullAt(projection._2)
@@ -947,7 +947,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRowAfterCoprocessor(projections: Seq[(Attribute, Int)],
                                result: Result,
-                               row: MutableRow): MutableRow = {
+                               row: InternalRow): InternalRow = {
     for (i <- projections.indices) {
       setColumn(result.rawCells()(i), projections(i), row)
     }
@@ -956,7 +956,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRowInCoprocessor(projections: Seq[(Attribute, Int)],
                             result: java.util.ArrayList[Cell],
-                            row: MutableRow): MutableRow = {
+                            row: InternalRow): InternalRow = {
     def getColumnLatestCell(family: Array[Byte],
                             qualifier: Array[Byte]): Cell = {
       // 0 means equal, >0 means larger, <0 means smaller
@@ -1011,7 +1011,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRow(projections: Seq[(Attribute, Int)],
                result: Result,
-               row: MutableRow): MutableRow = {
+               row: InternalRow): InternalRow = {
     lazy val rowKeys = HBaseKVHelper.decodingRawKeyColumns(result.getRow, keyColumns)
     projections.foreach {
       p =>

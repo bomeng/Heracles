@@ -46,7 +46,7 @@ import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
-import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, Util}
+import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, Util}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{AnalysisException, Row, SQLContext}
 import org.apache.spark.util.SerializableConfiguration
@@ -342,7 +342,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     s"${processName(ns)}:${processName(table)}"
   }
 
-  override def createTable(namespace: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
+  override def createTable(tableDefinition: CatalogTable, ignoreIfExists: Boolean): Unit = {
+    val namespace = tableDefinition.database
     requireDbExists(namespace)
     val table = tableDefinition.identifier.table
     if (tableExists(namespace, table)) {
@@ -357,7 +358,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
       }
       val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
       val colsSeq = tableDefinition.schema.map(f => processName(f.name)).asJava
-      val keyCols: Seq[(String, String)] = {
+      val keyCols: Seq[(String, DataType)] = {
         val keys = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "")
           .split(";").filter(_.nonEmpty)
         keys.map { f =>
@@ -369,7 +370,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
           (name, column.get.dataType)
         }
       }
-      val nonKeyCols: Seq[(String, String, String, String)] = {
+      val nonKeyCols: Seq[(String, DataType, String, String)] = {
         val nonkeys = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
               .map(_.trim).filter(_.nonEmpty)
         nonkeys.map { c =>
@@ -385,19 +386,19 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         }
       }
 
-      val keyMap: Map[String, String] = keyCols.toMap
+      val keyMap: Map[String, DataType] = keyCols.toMap
       val allColumns = colsSeq.map {
         name =>
           if (keyMap.contains(name)) {
             KeyColumn(
               name,
-              DataTypeUtils.getDataType(keyMap(name)),
+              keyMap(name),
               keyCols.indexWhere(_._1 == name))
           } else {
             val nonKeyCol = nonKeyCols.find(_._1 == name).get
             NonKeyColumn(
               name,
-              DataTypeUtils.getDataType(nonKeyCol._2),
+              nonKeyCol._2,
               nonKeyCol._3,
               nonKeyCol._4
             )
@@ -446,15 +447,15 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     // prepare the schema for the table
     val schema = relation.get.allColumns.map {
       case k: KeyColumn =>
-        CatalogColumn(k.sqlName, k.dataType.simpleString, nullable = false,
-          comment = Some(s"KEY COLUMNS ${k.order}"))
+        StructField(k.sqlName, k.dataType, nullable = false)
+          .withComment(s"KEY COLUMNS ${k.order}")
       case nk: NonKeyColumn =>
-        CatalogColumn(nk.sqlName, nk.dataType.simpleString, nullable = true,
-          comment = Some(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}"))
+        StructField(nk.sqlName, nk.dataType)
+          .withComment(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}")
     }
 
     val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
-      CatalogStorageFormat.empty, schema,
+      CatalogStorageFormat.empty, StructType(schema.toArray),
       properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE,
         HBaseSQLConf.NAMESPACE -> namespace, HBaseSQLConf.TABLE -> table))
     catalogTable
@@ -833,8 +834,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     if (hbaseRelation.isEmpty) {
       sys.error(s"Table Not Found: $tableName")
     } else {
-      val tableWithQualifiers = SubqueryAlias(tableName, hbaseRelation.get.logicalRelation)
-      alias.map(a => SubqueryAlias(a.toLowerCase, tableWithQualifiers))
+      val tableWithQualifiers = SubqueryAlias(tableName, hbaseRelation.get.logicalRelation, None)
+      alias.map(a => SubqueryAlias(a.toLowerCase, tableWithQualifiers, None))
         .getOrElse(tableWithQualifiers)
     }
   }

@@ -55,7 +55,7 @@ private[hbase] class HBasePartition(
       val oriPredicate = filterPredicates.get
       val predicateReferences = oriPredicate.references.toSeq
       val boundReference = BindReferences.bindReference(oriPredicate, predicateReferences)
-      val row = new GenericMutableRow(predicateReferences.size)
+      val row = new GenericInternalRow(predicateReferences.size)
       var rowIndex = 0
       var i = 0
       var range: Range[_] = null

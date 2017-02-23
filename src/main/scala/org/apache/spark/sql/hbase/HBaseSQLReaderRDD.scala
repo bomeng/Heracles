@@ -69,7 +69,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         @(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
-  val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
+  val rowBuilder: (Seq[(Attribute, Int)], Result, InternalRow) => InternalRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
   } else {
     relation.buildRow
@@ -154,7 +154,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
       output.distinct
     }
 
-    val row = new GenericMutableRow(finalOutput.size)
+    val row = new GenericInternalRow(finalOutput.size)
     val projections = finalOutput.zipWithIndex
 
     var finished: Boolean = false
@@ -294,14 +294,14 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         })
         val resultsWithPred = relation.htable.get(gets).zip(predForEachRange).filter(!_._1.isEmpty)
 
-        def evalResultForBoundPredicate(input: MutableRow, predicate: Expression): Boolean = {
+        def evalResultForBoundPredicate(input: InternalRow, predicate: Expression): Boolean = {
           val boundPredicate = BindReferences.bindReference(predicate, output)
           boundPredicate.eval(input).asInstanceOf[Boolean]
         }
         val projections = output.zipWithIndex
         val resultRows: Seq[InternalRow] = for {
           (result, predicate) <- resultsWithPred
-          row = new GenericMutableRow(output.size)
+          row = new GenericInternalRow(output.size)
           resultRow = relation.buildRow(projections, result, row)
           if predicate == null || evalResultForBoundPredicate(resultRow, predicate)
         } yield resultRow

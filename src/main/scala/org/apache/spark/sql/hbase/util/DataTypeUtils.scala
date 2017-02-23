@@ -22,7 +22,8 @@ import org.apache.hadoop.hbase.filter.{BinaryComparator, ByteArrayComparable}
 import org.apache.spark.SparkException
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.{Literal, MutableRow}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
 
@@ -90,7 +91,7 @@ object DataTypeUtils {
    * @param length the length of the data, only used by StringType
    * @param dt the data type
    */
-  def setRowColumnFromHBaseRawType(row: MutableRow,
+  def setRowColumnFromHBaseRawType(row: InternalRow,
                                    index: Int,
                                    src: HBaseRawType,
                                    offset: Int,

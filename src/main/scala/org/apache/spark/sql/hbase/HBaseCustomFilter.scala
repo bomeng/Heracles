@@ -103,7 +103,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
   private var remainingPredicateBoundRef: Expression = _
 
   // the working row
-  private var workingRow: GenericMutableRow = _
+  private var workingRow: GenericInternalRow = _
 
   /**
    * constructor method
@@ -150,7 +150,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
    */
   private def initialize() = {
     predReferences = predExpr.references.toSeq
-    workingRow = new GenericMutableRow(predReferences.size)
+    workingRow = new GenericInternalRow(predReferences.size)
     predicateMap = predReferences.map(a => a.name).zipWithIndex
     root = Node()
 
@@ -475,7 +475,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
    * reset all the value in the row to be null
    * @param row the row to be reset
    */
-  private def resetRow(row: GenericMutableRow) = {
+  private def resetRow(row: GenericInternalRow) = {
     // reset the row
     for (i <- 0 until row.numFields) {
       row.update(i, null)
