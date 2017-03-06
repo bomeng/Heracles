@@ -31,7 +31,7 @@ class HBaseCFTestSuite extends TestBase {
   private val csvPaths = Array("src/test/resources", "sql/hbase/src/test/resources")
   private val csvFile = "cf.txt"
   private val tpath = for (csvPath <- csvPaths if new java.io.File(csvPath).exists()) yield {
-    logInfo(s"Following path exists $csvPath\n")
+    logInfo(s"Following path exists $csvPath")
     csvPath
   }
   private[hbase] val csvPath = tpath(0)
