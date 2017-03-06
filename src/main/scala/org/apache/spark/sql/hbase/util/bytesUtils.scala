@@ -275,7 +275,7 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
       case item: Short => toBytes(item)
       case item: String => UTF8String.fromString(item).getBytes
       case item: UTF8String => toBytes(item)
-      case _=> throw new SparkException(s"Unrecognized data type: ${input}")
+      case _=> throw new SparkException(s"Unrecognized data type: $input")
     }
   }
 }

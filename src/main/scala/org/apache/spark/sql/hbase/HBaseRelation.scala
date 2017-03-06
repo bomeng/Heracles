@@ -644,7 +644,7 @@ private[hbase] case class HBaseRelation(
             None
           }
         case In(AttributeReference(name, dataType, _, _), list)
-            if list.size > 0 && list.forall(_.isInstanceOf[Literal]) =>
+            if list.nonEmpty && list.forall(_.isInstanceOf[Literal]) =>
           val column = nonKeyColumns.find(_.sqlName == name)
           if (column.isDefined) {
             val filterList = new FilterList(FilterList.Operator.MUST_PASS_ONE)
