@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.hbase
 
+import java.io.File
+
 import org.apache.hadoop.hbase._
 
 /**
@@ -30,8 +32,8 @@ class HBaseTpcMiniTestSuite extends TestBase {
 
   private val csvPaths = Array("src/test/resources", "sql/hbase/src/test/resources")
   private val csvFile = "store_sales.txt"
-  private val tpath = for (csvPath <- csvPaths if new java.io.File(csvPath).exists()) yield {
-    logInfo(s"Following path exists $csvPath\n")
+  private val tpath = for (csvPath <- csvPaths if new File(csvPath).exists()) yield {
+    logInfo(s"Following path exists $csvPath")
     csvPath
   }
   private[hbase] val csvPath = tpath(0)

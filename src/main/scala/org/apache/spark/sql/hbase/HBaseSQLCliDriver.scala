@@ -226,10 +226,10 @@ object HBaseSQLCliDriver extends Logging {
           logInfo(s"Processing $line")
           val start = System.currentTimeMillis()
           val df = hbaseCtx.sql(line)
+          val end = System.currentTimeMillis()
           val str = df.showString(df.count.toInt, truncate =
             if (token(0).toUpperCase == "EXPLAIN") 0 else 20
           )
-          val end = System.currentTimeMillis()
           if (!str.equals("++\n||\n++\n++\n")) printout(out, str)
           val timeTaken: Double = (end - start) / 1000.0
           printout(out, s"Time taken: $timeTaken seconds")
