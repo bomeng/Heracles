@@ -14,7 +14,7 @@ Online documentation is in the doc folder.
 
 ## Requirements
 
-This version of 2.0.2 requires Spark 2.0.2.
+This version of 2.2.0 requires Spark 2.2.0.
 
 ## Building Spark HBase
 
@@ -54,7 +54,7 @@ Currently, HBase coprocessor is not supported in this release.
 The shell will connect to a local HBase master. You need to configure the HBase's hbase-env.sh file under "conf" folder by adding hspark.jar to its classpath.
 
 ```
-export HBASE_CLASSPATH=<path_to_hspark>/hspark-2.0.2.jar
+export HBASE_CLASSPATH=<path_to_hspark>/hspark-2.2.0.jar
 ```
 
 You may need to set the JAVA_HOME in the hbase-env.sh as well. Follow the instruction of configuring HBase to its proper settings (e.g. hbase-site.xml etc), after that, you can start HBase by following command:
@@ -72,7 +72,7 @@ Then, the easiest way to start using Spark HBase is through the Scala shell:
 
 First, add the spark-hbase jar to the SPARK_CLASSPATH in the $SPARK_HOME/conf directory, as follows:
 ```
-SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.0.2.jar
+SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.2.0.jar
 ```
 Then go to the spark-hbase installation directory and issue
 ```
@@ -88,7 +88,7 @@ To run a python script, the PYTHONPATH environment should be set to the "python"
 export PYTHONPATH=/root-of-HSpark/python
 ```
 
-Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.0.2. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:2.0.2" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.0.2" for Pythin shell.
+Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.2.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:2.2.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.2.0" for Pythin shell.
 
 ## Running Tests
 
