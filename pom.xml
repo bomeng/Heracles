@@ -33,7 +33,7 @@
   <packaging>jar</packaging>
   <version>2.2.0</version>
   <name>HSpark</name>
-  <url>https://github.com/yzhou2001/HSpark</url>
+  <url>https://github.com/bomeng/HSpark</url>
 
   <licenses>
     <license>
@@ -44,9 +44,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:yzhou2001/HSpark.git</connection>
-    <developerConnection>scm:git:https://github.com/yzhou2001/HSpark.git</developerConnection>
-    <url>scm:git:git@github.com:yzhou2001/HSpark.git</url>
+    <connection>scm:git:git@github.com:bomeng/HSpark.git</connection>
+    <developerConnection>scm:git:https://github.com/bomeng/HSpark.git</developerConnection>
+    <url>scm:git:git@github.com:bomeng/HSpark.git</url>
     <tag>HEAD</tag>
   </scm>
 
