@@ -23,8 +23,9 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
+import org.apache.spark.sql.catalyst.expressions.codegen.{GeneratePredicate, Predicate}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hbase.execution.HBaseSQLTableScan
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
@@ -68,6 +69,10 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         @(transient @param) val filterPred: Option[Expression],
                         @(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
+  @transient lazy val filterPredNullReduced = filterPred match {
+    case Some(p) => Some(p.notNullReduce())
+    case None => None
+  }
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, InternalRow) => InternalRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
@@ -104,7 +109,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   }
 
   override def getPartitions: Array[Partition] = {
-    RangeCriticalPoint.generatePrunedPartitions(relation, filterPred).toArray
+    RangeCriticalPoint.generatePrunedPartitions(relation, filterPredNullReduced).toArray
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
@@ -161,7 +166,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
     var gotNext: Boolean = false
     var result: Result = null
 
-    val otherFilter: (InternalRow) => Boolean =
+    val otherFilter: Predicate =
       if (!hasSubPlan && otherFilters.isDefined) {
         if (wholeStageEnabled) {
           GeneratePredicate.generate(otherFilters.get, finalOutput)
@@ -207,7 +212,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
     if (otherFilter == null) {
       new InterruptibleIterator(context, iterator)
     } else {
-      new InterruptibleIterator(context, iterator.filter(otherFilter))
+      new InterruptibleIterator(context, iterator.filter(otherFilter.eval(_)))
     }
   }
 
@@ -292,16 +297,23 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
           gets.add(generateGet(range))
           range.lastRange.pred
         })
+
+        val predOutput = output.union(predForEachRange.flatMap(pr =>
+          if (pr == null) {
+            Nil
+          } else {
+            pr.references.toSeq
+          })).distinct
         val resultsWithPred = relation.htable.get(gets).zip(predForEachRange).filter(!_._1.isEmpty)
 
         def evalResultForBoundPredicate(input: InternalRow, predicate: Expression): Boolean = {
-          val boundPredicate = BindReferences.bindReference(predicate, output)
+          val boundPredicate = BindReferences.bindReference(predicate, predOutput)
           boundPredicate.eval(input).asInstanceOf[Boolean]
         }
-        val projections = output.zipWithIndex
+        val projections = predOutput.zipWithIndex
         val resultRows: Seq[InternalRow] = for {
           (result, predicate) <- resultsWithPred
-          row = new GenericInternalRow(output.size)
+          row = new GenericInternalRow(predOutput.size)
           resultRow = relation.buildRow(projections, result, row)
           if predicate == null || evalResultForBoundPredicate(resultRow, predicate)
         } yield resultRow

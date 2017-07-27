@@ -19,9 +19,10 @@ package org.apache.spark.sql.hbase
 import org.apache.hadoop.hbase.regionserver.RegionScanner
 import org.apache.spark.Partition
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations._
-import org.apache.spark.sql.hbase.types.{HBaseBytesType, Range}
+import org.apache.spark.sql.hbase.types.HBaseBytesType
+import org.apache.spark.sql.types.Range
 
 import scala.annotation.meta.param
 

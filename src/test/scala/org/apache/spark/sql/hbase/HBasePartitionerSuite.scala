@@ -110,7 +110,7 @@ class HBasePartitionerSuite extends TestBase {
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
-    val lll = relation.output.find(_.name == "column2").get
+    val lll = relation.output().find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
     val ll = EqualTo(lll, llr)
 
@@ -120,7 +120,7 @@ class HBasePartitionerSuite extends TestBase {
 
     val l = Or(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create(32, IntegerType)
     val rl = EqualTo(rll, rlr)
 
@@ -237,7 +237,7 @@ class HBasePartitionerSuite extends TestBase {
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
-    val lll = relation.output.find(_.name == "column1").get
+    val lll = relation.output().find(_.name == "column1").get
     val llr = Literal.create(8, IntegerType)
     val ll = EqualTo(lll, llr)
 
@@ -271,7 +271,7 @@ class HBasePartitionerSuite extends TestBase {
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
-    val lll = relation.output.find(_.name == "column1").get
+    val lll = relation.output().find(_.name == "column1").get
     val llr = Literal.create(8, IntegerType)
     val ll = LessThan(lll, llr)
 

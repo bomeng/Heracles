@@ -29,7 +29,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
+import org.apache.spark.sql.catalyst.expressions.codegen.{GeneratePredicate, Predicate}
 import org.apache.spark.sql.hbase.util.DataTypeUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
@@ -49,7 +49,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
   @transient var scanner: RegionScanner = _
 
   private def createIterator(context: TaskContext): Iterator[InternalRow] = {
-    val otherFilter: (InternalRow) => Boolean = {
+    val otherFilter: Predicate = {
       if (otherFilters.isDefined) {
         if (codegenEnabled) {
           GeneratePredicate.generate(otherFilters.get, finalOutput)
@@ -103,7 +103,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
     if (otherFilter == null) {
       new InterruptibleIterator(context, iterator)
     } else {
-      new InterruptibleIterator(context, iterator.filter(otherFilter))
+      new InterruptibleIterator(context, iterator.filter(otherFilter.eval(_)))
     }
   }
 

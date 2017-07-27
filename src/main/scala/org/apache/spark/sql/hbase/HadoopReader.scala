@@ -36,7 +36,7 @@ private[hbase] class HadoopReader(
     val relation = baseRelation
 
     rdd.mapPartitions { iter =>
-      val lineBuffer = HBaseKVHelper.createLineBuffer(relation.output)
+      val lineBuffer = HBaseKVHelper.createLineBuffer(relation.output())
       val keyBytes = new Array[(HBaseRawType, DataType)](relation.keyColumns.size)
       iter.flatMap { line =>
         if (line == "") {
@@ -48,7 +48,7 @@ private[hbase] class HadoopReader(
           // the array returned by line.split(splitRegex).
           val valueBytes = new Array[HBaseRawType](relation.nonKeyColumns.size)
           var textValueArray = line.split(splitRegex)
-          while (textValueArray.length < relation.output.length) {
+          while (textValueArray.length < relation.output().length) {
             textValueArray = textValueArray :+ ""
           }
           HBaseKVHelper.string2KV(textValueArray, relation, lineBuffer, keyBytes, valueBytes)

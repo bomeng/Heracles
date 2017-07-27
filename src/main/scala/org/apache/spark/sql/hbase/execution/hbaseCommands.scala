@@ -59,14 +59,12 @@ case class AlterAddColCommand(namespace: String,
 }
 
 @DeveloperApi
-case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
+case class InsertValueIntoTableCommand(tid: TableIdentifier, valueSeq: Seq[String])
   extends RunnableCommand {
   override def run(sparkSession: SparkSession) = {
-    val solvedRelation = sparkSession.sessionState.catalog
-      .lookupRelation(TableIdentifier(tableName))
-    val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
-      .child.asInstanceOf[LogicalRelation]
-      .relation.asInstanceOf[HBaseRelation]
+    val relation: HBaseRelation = sparkSession.sessionState.catalog.externalCatalog
+      .asInstanceOf[HBaseCatalog]
+      .getHBaseRelation(tid.database.getOrElse(null), tid.table).getOrElse(null)
 
     val bytes = valueSeq.zipWithIndex.map(v =>
       DataTypeUtils.string2TypeData(v._1, relation.schema(v._2).dataType))

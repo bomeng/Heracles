@@ -86,13 +86,9 @@ class HBaseCatalogTestSuite extends TestBase {
     assert(result.nonKeyColumns(1).dataType === FloatType)
     assert(result.nonKeyColumns.head.dataType === BooleanType)
 
-    val relation = catalog.lookupRelation("default", tableName)
-    val subquery = relation.asInstanceOf[SubqueryAlias]
-    val hbRelation = subquery.child.asInstanceOf[LogicalRelation].relation.asInstanceOf[HBaseRelation]
-    assert(hbRelation.nonKeyColumns.map(_.family) == List("family1", "family2"))
+    assert(result.nonKeyColumns.map(_.family) == List("family1", "family2"))
     val keyColumns = Seq(KeyColumn("column1", StringType, 0), KeyColumn("column2", IntegerType, 1))
-    assert(hbRelation.keyColumns.equals(keyColumns))
-    assert(relation.childrenResolved)
+    assert(result.keyColumns.equals(keyColumns))
     catalog.stopAdmin()
   }
 
@@ -121,7 +117,7 @@ class HBaseCatalogTestSuite extends TestBase {
     val namespace = "default"
     val tableName = "testTable"
 
-    catalog.dropTable(namespace, tableName, ignoreIfNotExists = true)
+    catalog.dropTable(namespace, tableName, true, true)
     assert(catalog.tableExists(namespace, tableName) === false)
     catalog.stopAdmin()
   }

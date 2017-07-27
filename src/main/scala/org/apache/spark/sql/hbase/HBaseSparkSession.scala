@@ -23,12 +23,12 @@ import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
-import org.apache.spark.sql.catalyst.rules.RuleExecutor
-import org.apache.spark.sql.execution.datasources.{DataSourceAnalysis, FindDataSourceTable, PreprocessTableInsertion, ResolveDataSource}
-import org.apache.spark.sql.execution.exchange.EnsureRequirements
-import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, datasources}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.datasources._
+import org.apache.spark.sql.execution.SparkPlanner
 import org.apache.spark.sql.hbase.execution.{HBaseSourceAnalysis, HBaseStrategies}
-import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
+import org.apache.spark.sql.internal.{BaseSessionStateBuilder, SQLConf, SessionState, SharedState}
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   self =>
@@ -36,40 +36,44 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
 
   @transient
-  override private[sql] lazy val sessionState: SessionState = new HBaseSessionState(this)
+  override lazy val sessionState: SessionState = new HBaseSessionStateBuilder(this).build()
 
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
 
   @transient
-  override  private[sql] lazy val sharedState: SharedState =
+  override lazy val sharedState: SharedState =
     new HBaseSharedState(sc, this.sqlContext)
-
-  experimental.extraStrategies = Seq((new SparkPlanner(sc, sessionState.conf, Nil)
-    with HBaseStrategies).HBaseDataSource)
-
-  @transient
-  protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
-    val batches = Batch("Add exchange", Once, EnsureRequirements(sessionState.conf)) ::
-      // No AddCoprocessor now for lack of unsafe support in coprocessor
-      // maybe added later
-      Nil
-  }
 }
 
-class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
+class HBaseSessionStateBuilder(session: SparkSession, parentState: Option[SessionState] = None) extends BaseSessionStateBuilder(session) {
   override lazy val conf: SQLConf = new HBaseSQLConf
+
+  override protected def newBuilder: NewBuilder = new HBaseSessionStateBuilder(_, _)
+
+  override lazy val experimentalMethods: ExperimentalMethods = {
+    val result = new ExperimentalMethods;
+    result.extraStrategies = Seq((new SparkPlanner(session.sparkContext, conf, new ExperimentalMethods)
+      with HBaseStrategies).HBaseDataSource)
+    result
+  }
 
   override lazy val analyzer: Analyzer = {
     new Analyzer(catalog, conf) {
-      override val extendedResolutionRules =
-        PreprocessTableInsertion(conf) ::
-          new FindDataSourceTable(sparkSession) ::
-          DataSourceAnalysis(conf) ::
-          HBaseSourceAnalysis(conf, sparkSession) ::
-          (if (conf.runSQLonFile) new ResolveDataSource(sparkSession) :: Nil else Nil)
+      override val extendedResolutionRules: Seq[Rule[LogicalPlan]] =
+          new FindDataSourceTable(session) +:
+          new ResolveSQLOnFile(session) +:
+          customResolutionRules
 
-      override val extendedCheckRules = Seq(datasources.PreWriteCheck(conf, catalog))
+      override val postHocResolutionRules: Seq[Rule[LogicalPlan]] =
+          PreprocessTableCreation(session) +:
+          PreprocessTableInsertion(conf) +:
+          DataSourceAnalysis(conf) +:
+          HBaseSourceAnalysis(session) +:
+          customPostHocResolutionRules
+
+      override val extendedCheckRules =
+        customCheckRules
     }
   }
 }

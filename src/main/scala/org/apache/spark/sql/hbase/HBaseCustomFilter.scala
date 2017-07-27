@@ -25,8 +25,8 @@ import org.apache.hadoop.hbase.filter.FilterBase
 import org.apache.hadoop.hbase.util.{Bytes, Writables}
 import org.apache.hadoop.hbase.{Cell, CellUtil, HConstants, KeyValue}
 import org.apache.hadoop.io.Writable
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations._
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
 import org.apache.spark.sql.types.{AtomicType, DataType, StringType}
 
@@ -585,12 +585,15 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
       if (data.nonEmpty) {
         val family = CellUtil.cloneFamily(item)
         val qualifier = CellUtil.cloneQualifier(item)
-        val nkc = relation.nonKeyColumns.find(a =>
+        val nkcOpt = relation.nonKeyColumns.find(a =>
           Bytes.compareTo(a.familyRaw, family) == 0 &&
-            Bytes.compareTo(a.qualifierRaw, qualifier) == 0).get
-        val value = DataTypeUtils.bytesToData(
-          data, 0, data.length, nkc.dataType, relation.bytesUtils)
-        cellMap += (nkc -> value)
+            Bytes.compareTo(a.qualifierRaw, qualifier) == 0)
+        if (nkcOpt.isDefined) {
+          val nkc = nkcOpt.get
+          val value = DataTypeUtils.bytesToData(
+            data, 0, data.length, nkc.dataType, relation.bytesUtils)
+          cellMap += (nkc -> value)
+        }
       }
     }
     for (item <- remainingPredicate) {

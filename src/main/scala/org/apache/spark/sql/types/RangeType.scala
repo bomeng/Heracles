@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.hbase.types
+package org.apache.spark.sql.types
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -39,7 +39,7 @@ class Range[+T](val start: Option[T], // None for open ends
     startInclusive && endInclusive && start.get.equals(end.get)
 }
 
-private[hbase] class RangeType[T] extends PartialOrderingDataType {
+private[sql] class RangeType[T] extends PartialOrderingDataType {
   override def defaultSize: Int = 4096
   private[sql] type InternalType = Range[T]
   @transient private[sql] lazy val tag = ScalaReflectionLock.synchronized { typeTag[InternalType] }

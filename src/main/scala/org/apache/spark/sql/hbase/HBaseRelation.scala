@@ -24,68 +24,18 @@ import org.apache.hadoop.hbase.{HBaseConfiguration, _}
 import org.apache.log4j.Logger
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.{InternalRow, NotPusher}
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hbase.catalyst.NotPusher
-import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
-import org.apache.spark.sql.hbase.types.Range
 import org.apache.spark.sql.hbase.util._
-import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, RelationProvider}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation}
+import org.apache.spark.sql.types.{Range, _}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-
-class HBaseSource extends RelationProvider {
-  // Returns a new HBase relation with the given parameters
-  override def createRelation(
-                               sqlContext: SQLContext,
-                               parameters: Map[String, String]): BaseRelation = {
-    val catalog = sqlContext.sparkSession.catalog.asInstanceOf[HBaseCatalog]
-
-    val catalogTable = CatalogTable(null, null, null, null, properties = parameters)
-    catalog.createTable(catalogTable, ignoreIfExists = true)
-
-    val tableName = parameters("tableName")
-    val hbaseNamespace = parameters("namespace")
-    val hbaseTableName = parameters("hbaseTableName")
-    val encodingFormat = parameters("encodingFormat")
-    val colsSeq = parameters("cols").split(",")
-    val keyCols = parameters("keyCols").split(";")
-      .map { c => val cols = c.split(","); (cols(0), cols(1)) }
-    val nonKeyCols = parameters("nonKeyCols").split(";")
-      .filterNot(_ == "")
-      .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
-
-    val keyMap: Map[String, String] = keyCols.toMap
-    val allColumns = colsSeq.map {
-      name =>
-        if (keyMap.contains(name)) {
-          KeyColumn(
-            name,
-            DataTypeUtils.getDataType(keyMap(name)),
-            keyCols.indexWhere(_._1 == name))
-        } else {
-          val nonKeyCol = nonKeyCols.find(_._1 == name).get
-          NonKeyColumn(
-            name,
-            DataTypeUtils.getDataType(nonKeyCol._2),
-            nonKeyCol._3,
-            nonKeyCol._4
-          )
-        }
-    }
-
-    HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
-      allColumns, catalog.deploySuccessfully,
-      catalog.hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
-      encodingFormat, catalog.connection)(sqlContext)
-  }
-}
 
 /**
  *
@@ -133,8 +83,8 @@ private[hbase] case class HBaseRelation(
       BinaryBytesUtils
     }
 
-  lazy val partitionKeys = keyColumns.map(col =>
-    logicalRelation.output.find(_.name == col.sqlName).get)
+  def partitionKeys = keyColumns.map(col =>
+    output().find(_.name == col.sqlName).get)
 
   @transient lazy val columnMap = allColumns.map {
     case key: KeyColumn => (key.sqlName, key.order)
@@ -217,9 +167,29 @@ private[hbase] case class HBaseRelation(
   }
 
   // corresponding logical relation
-  @transient lazy val logicalRelation = LogicalRelation(this)
+  @transient private var _logicalRelation: LogicalRelation = _
 
-  lazy val output = logicalRelation.output
+  def logicalRelation(lr: Option[LogicalRelation] = None): LogicalRelation = {
+    lr match {
+      case Some(l) => {
+        _logicalRelation = l
+        _output = l.output
+      }
+      case None => if (_logicalRelation == null) {
+        _logicalRelation = LogicalRelation(this)
+        _output = _logicalRelation.output
+      }
+    }
+    _logicalRelation
+  }
+
+  private var _output: Seq[AttributeReference] = _
+  def output(): Seq[AttributeReference] = {
+    if (_output == null) {
+      _output = logicalRelation().output
+    }
+    _output
+  }
 
   @transient lazy val dts: Seq[DataType] = allColumns.map(_.dataType)
 

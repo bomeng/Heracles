@@ -25,8 +25,6 @@ object HBaseSQLConf {
   val USE_COPROCESSOR = "spark.sql.hbase.coprocessor"
   val USE_CUSTOMFILTER = "spark.sql.hbase.customfilter"
 
-  val TABLE = "table"
-  val NAMESPACE = "namespace"
   val PROVIDER = "provider"
   val HBASE = "hbase"
   val COLS = "cols"

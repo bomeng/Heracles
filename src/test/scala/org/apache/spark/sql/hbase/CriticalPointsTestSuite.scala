@@ -46,7 +46,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace,
       hbaseTableName, allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column1").get
+    val lll = relation.output().find(_.name == "column1").get
     val llr = Literal.create(1023, IntegerType)
     val ll = GreaterThan(lll, llr)
 
@@ -88,7 +88,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column1").get
+    val lll = relation.output().find(_.name == "column1").get
     val llr = Literal.create(1023L, LongType)
     val ll = GreaterThan(lll, llr)
 
@@ -125,7 +125,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column1").get
+    val lll = relation.output().find(_.name == "column1").get
     val llr = Literal.create("aaa", StringType)
     val ll = EqualTo(lll, llr)
 
@@ -160,17 +160,17 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column3").get
+    val lll = relation.output().find(_.name == "column3").get
     val llr = Literal.create(8.toShort, ShortType)
     val ll = GreaterThan(lll, llr)
 
-    val lrl = relation.output.find(_.name == "column2").get
+    val lrl = relation.output().find(_.name == "column2").get
     val lrr = Literal.create(2048, IntegerType)
     val lr = EqualTo(lrl, lrr)
 
     val l = And(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create("abc", StringType)
     val rl = EqualTo(rll, rlr)
 
@@ -222,7 +222,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column2").get
+    val lll = relation.output().find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
     val ll = EqualTo(lll, llr)
 
@@ -232,7 +232,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
 
     val l = Or(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create("abc", StringType)
     val rl = EqualTo(rll, rlr)
 
@@ -288,7 +288,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column2").get
+    val lll = relation.output().find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
     val ll = EqualTo(lll, llr)
 
@@ -298,7 +298,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
 
     val l = Or(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create(32, IntegerType)
     val rl = EqualTo(rll, rlr)
 
@@ -369,7 +369,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column2").get
+    val lll = relation.output().find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
     val ll = EqualTo(lll, llr)
 
@@ -379,7 +379,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
 
     val l = Or(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create(32, IntegerType)
     val rl = EqualTo(rll, rlr)
 
@@ -461,7 +461,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column2").get
+    val lll = relation.output().find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
     val ll = GreaterThan(lll, llr)
 
@@ -471,7 +471,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
 
     val l = And(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create(32, IntegerType)
     val rl = EqualTo(rll, rlr)
 
@@ -552,7 +552,7 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
       allColumns, Some(true))(TestHbase.sqlContext)
 
-    val lll = relation.output.find(_.name == "column3").get
+    val lll = relation.output().find(_.name == "column3").get
     val llr = Literal.create(32, IntegerType)
     val ll = GreaterThan(lll, llr)
 
@@ -562,11 +562,11 @@ class CriticalPointsTestSuite extends FunSuite with BeforeAndAfterAll with Loggi
 
     val l = And(ll, lr)
 
-    val rll = relation.output.find(_.name == "column1").get
+    val rll = relation.output().find(_.name == "column1").get
     val rlr = Literal.create(2, IntegerType)
     val rl = EqualTo(rll, rlr)
 
-    val rrl = relation.output.find(_.name == "column2").get
+    val rrl = relation.output().find(_.name == "column2").get
     val rrr = Literal.create(8, IntegerType)
     val rr = EqualTo(rrl, rrr)
 

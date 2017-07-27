@@ -106,13 +106,13 @@ object HBaseKVHelper {
                 lineBuffer: Array[ToBytesUtils],
                 keyBytes: Array[(Array[Byte], DataType)],
                 valueBytes: Array[HBaseRawType]) = {
-    assert(values.length == relation.output.length,
-      s"values length ${values.length} not equals columns length ${relation.output.length}")
+    assert(values.length == relation.output().length,
+      s"values length ${values.length} not equals columns length ${relation.output().length}")
 
     relation.keyColumns.foreach(kc => {
       val ordinal = kc.ordinal
       keyBytes(kc.order) = (string2Bytes(values(ordinal), lineBuffer(ordinal)),
-        relation.output(ordinal).dataType)
+        relation.output()(ordinal).dataType)
     })
     for (i <- relation.nonKeyColumns.indices) {
       val nkc = relation.nonKeyColumns(i)

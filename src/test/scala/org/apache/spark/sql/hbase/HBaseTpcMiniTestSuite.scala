@@ -325,4 +325,16 @@ class HBaseTpcMiniTestSuite extends TestBase {
     val rows = runSql(sql)
     assert(rows.length == 18)
   }
+
+  test("Query 33") {
+    val sql = "SELECT ss_hdemo_sk FROM store_sales WHERE ss_sold_date_sk IS NULL AND ss_sold_time_sk = 75316"
+    val rows = runSql(sql)
+    assert(rows.length == 1)
+  }
+
+  test("Query 34") {
+    val sql = "SELECT 1 FROM store_sales WHERE ss_sold_date_sk IS NULL"
+    val rows = runSql(sql)
+    assert(rows.length == 5)
+  }
 }

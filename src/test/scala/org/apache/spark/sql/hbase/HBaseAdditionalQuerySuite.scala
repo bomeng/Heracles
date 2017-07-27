@@ -159,11 +159,14 @@ class HBaseAdditionalQuerySuite extends TestBase {
   }
 
   test("Join Parquet Table Table") {
+    val enabled = TestHbase.sqlContext.getConf("spark.sql.crossJoin.enabled")
+    TestHbase.sqlContext.setConf("spark.sql.crossJoin.enabled", "true")
     val sql =
       """select * from spark_teacher_3key
         |join parquetTable where parquetTable.name="Bruce"
         |or parquetTable.favorite_color="Blue" """.stripMargin
     checkResult(TestHbase.sql(sql), containExchange = true, 24)
+    TestHbase.sqlContext.setConf("spark.sql.crossJoin.enabled", enabled)
   }
 
   test("NO Coprocessor and No CustomerFilter Test") {

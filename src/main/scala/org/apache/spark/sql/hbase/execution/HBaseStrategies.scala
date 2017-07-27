@@ -18,16 +18,18 @@
 package org.apache.spark.sql.hbase.execution
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.catalog.SimpleCatalogRelation
+import org.apache.spark.sql.catalyst.catalog.CatalogRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.{CatalystConf, InternalRow}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.command.{CreateTableCommand, DDLUtils}
+import org.apache.spark.sql.execution.datasources.{CreateTable, InsertIntoDataSourceCommand, LogicalRelation}
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase._
-import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.types.{DataType, StringType}
+import org.apache.spark.sql.{AnalysisException, SaveMode, SparkSession, Strategy}
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
@@ -60,7 +62,7 @@ private[hbase] trait HBaseStrategies {
 //            planLater(child)) :: Nil
 
       case PhysicalOperation(projectList, inPredicates,
-      l@LogicalRelation(relation: HBaseRelation, None, None)) =>
+      l@LogicalRelation(relation: HBaseRelation, _, None)) =>
         pruneFilterProjectHBase(
           l,
           projectList,
@@ -226,41 +228,45 @@ private[hbase] trait HBaseStrategies {
 
 }
 
-private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: SparkSession)
+private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
   extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case s: SimpleCatalogRelation =>
-      val properties = s.metadata.properties
+  override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperators {
+    case s: CatalogRelation =>
+      val properties = s.tableMeta.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
-        val namespace = properties(HBaseSQLConf.NAMESPACE)
-        val table = properties(HBaseSQLConf.TABLE)
+        val namespace = s.tableMeta.identifier.database.getOrElse("default")
+        val table = s.tableMeta.identifier.table
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
-          session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table).get.logicalRelation
+          val result = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, table).get
+          result.logicalRelation(Some(LogicalRelation(result, s.dataCols, None)))
         } else {
           s
         }
       } else {
         s
       }
-    case insert@InsertIntoTable(s: SimpleCatalogRelation, _, _, _, _) =>
-      val properties = s.metadata.properties
+    case insert@InsertIntoTable(s: CatalogRelation, p, c, o, i) =>
+      val properties = s.tableMeta.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
-        val namespace = properties(HBaseSQLConf.NAMESPACE)
-        val table = properties(HBaseSQLConf.TABLE)
-        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
+        val namespace = s.tableMeta.identifier.database.getOrElse("default")
+        val _table = s.tableMeta.identifier.table
+        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, _table)
         if (catalogTable != null) {
-          val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table).get.logicalRelation
-          insert.copy(table = t)
+          val r = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, _table).get
+          val t = r.logicalRelation(Some(LogicalRelation(r, s.dataCols, None)))
+          InsertIntoDataSourceCommand(t, insert.query, insert.overwrite)
         } else {
           insert
         }
       } else {
         insert
       }
+    case CreateTable(tableDesc, mode, None) =>
+      CreateTableCommand(tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
   }
 }

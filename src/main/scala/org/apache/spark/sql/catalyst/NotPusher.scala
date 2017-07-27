@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.hbase.catalyst
+package org.apache.spark.sql.catalyst
 
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.rules._
