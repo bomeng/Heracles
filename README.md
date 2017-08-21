@@ -22,11 +22,11 @@ Spark HBase is built using [Apache Maven](http://maven.apache.org/).
 
 I. Clone the HSpark project from GitHub
 ```
-$ git clone https://github.com/yzhou2001/HSpark.git
+$ git clone https://github.com/bomeng/HSpark.git
 ```
 or
 ```
-$ git clone git@github.com:yzhou2001/HSpark.git
+$ git clone git@github.com:bomeng/HSpark.git
 ```
 
 II. Go to the root of the source tree
