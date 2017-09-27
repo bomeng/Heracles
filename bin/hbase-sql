@@ -32,7 +32,7 @@ fi
 
 export FWDIR=$SPARK_HOME
 export HSPARK_SOURCE="$(cd "`dirname "$0"`"/..; pwd)"
-export JAR="$HSPARK_SOURCE/target/hspark-2.0.2.jar"
+export JAR="$HSPARK_SOURCE/target/hspark-2.2.0.jar"
 
 function usage {
   if [ -n "$1" ]; then
