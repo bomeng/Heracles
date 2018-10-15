@@ -1,6 +1,6 @@
 ## Heracles: Fast SQL on HBase using SparkSQL
 
-**Note:** The original project name is "HSpark" which is requested to rename to the current name due to trade mark concerns by Apache foundation.
+**Note:** The original project name is "`HSpark`" which is requested to rename to the current name due to trade mark concerns by Apache foundation.
 
 Apache HBase is a distributed Key-Value store of data on HDFS. It is modeled after Google’s Big Table, and provides APIs to query the data. The data is organized, partitioned and distributed by its “row keys”. Per partition, the data is further physically partitioned by “column families” that specify collections of “columns” of data. The data model is for wide and sparse tables where columns are dynamic and may well be sparse.
 
