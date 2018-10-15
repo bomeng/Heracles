@@ -1,4 +1,4 @@
-## HSpark: Fast SQL on HBase using SparkSQL
+## Heracles: Fast SQL on HBase using SparkSQL
 
 Apache HBase is a distributed Key-Value store of data on HDFS. It is modeled after Google’s Big Table, and provides APIs to query the data. The data is organized, partitioned and distributed by its “row keys”. Per partition, the data is further physically partitioned by “column families” that specify collections of “columns” of data. The data model is for wide and sparse tables where columns are dynamic and may well be sparse.
 
@@ -20,18 +20,18 @@ This version of 2.2.0 requires Spark 2.2.0.
 
 Spark HBase is built using [Apache Maven](http://maven.apache.org/).
 
-I. Clone the HSpark project from GitHub
+I. Clone the Heracles project from GitHub
 ```
-$ git clone https://github.com/bomeng/HSpark.git
+$ git clone https://github.com/bomeng/Heracles.git
 ```
 or
 ```
-$ git clone git@github.com:bomeng/HSpark.git
+$ git clone git@github.com:bomeng/Heracles.git
 ```
 
 II. Go to the root of the source tree
 ```
-$ cd HSpark
+$ cd Heracles
 ```
 
 III. Build the project
@@ -72,7 +72,7 @@ Then, the easiest way to start using Spark HBase is through the Scala shell:
 
 First, add the spark-hbase jar to the SPARK_CLASSPATH in the $SPARK_HOME/conf directory, as follows:
 ```
-SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.2.0.jar
+SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/Heracles-2.2.0.jar
 ```
 Then go to the spark-hbase installation directory and issue
 ```
@@ -80,15 +80,15 @@ Then go to the spark-hbase installation directory and issue
 ```
 A successful message is as follows:
 ```
-   You are using HSpark !!!
+   You are using Heracles !!!
    HBaseSQLContext available as hsqlContext.
 ```
 To run a python script, the PYTHONPATH environment should be set to the "python" directory of the Spark-HBase installation. For example,
 ```
-export PYTHONPATH=/root-of-HSpark/python
+export PYTHONPATH=/root-of-Heracles/python
 ```
 
-Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.2.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:2.2.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.2.0" for Pythin shell.
+Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.2.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages Heracles/Heracles:2.2.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages Heracles/Heracles:2.2.0" for Pythin shell.
 
 ## Running Tests
 
