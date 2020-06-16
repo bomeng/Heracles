@@ -83,7 +83,7 @@
     <jets3t.version>0.7.1</jets3t.version>
     <commons.math3.version>3.4.1</commons.math3.version>
     <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
-    <jetty.version>9.2.16.v20160414</jetty.version>
+    <jetty.version>9.3.24.v20180605</jetty.version>
     <jline.version>2.12.1</jline.version>
     <guava.version>14.0.1</guava.version>
 
